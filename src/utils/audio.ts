@@ -1288,6 +1288,347 @@ class SoundEngine {
       // Ignore
     }
   }
+
+  // =========================================================================
+  // --- INVULNERABILITY SHIELD AUDIO SYNTHESIS (Озвучка неуязвимости Z) ---
+  // =========================================================================
+  playShield() {
+    if (this.isCartoon2Mode) {
+      this.playCartoon2Shield();
+      return;
+    }
+    if (this.isCartoonMode) {
+      this.playCartoonShield();
+      return;
+    }
+    if (this.currentTheme === 'notebook') {
+      this.playNotebookShield();
+      return;
+    }
+    if (this.currentTheme === 'blueprint') {
+      this.playBlueprintShield();
+      return;
+    }
+    if (this.currentTheme === 'game' || this.currentTheme === 'dark') {
+      this.playSciFiShield();
+      return;
+    }
+    this.playClassicShield();
+  }
+
+  // 1. CARTOON 2 (Мульт 2): Magical anime bubble power-up + sparkling fairy arpeggio ("Пьююю-Дзинь-Вжух!")
+  playCartoon2Shield() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Ascending magical arpeggio (fairy chime notes)
+      const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98]; // C5, E5, G5, C6, E6, G6
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.05);
+        gain.gain.setValueAtTime(0.18, now + i * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.35);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + i * 0.05);
+        osc.stop(now + i * 0.05 + 0.35);
+      });
+
+      // Cute anime bubble sweep riser
+      const bubbleOsc = ctx.createOscillator();
+      const bubbleGain = ctx.createGain();
+      bubbleOsc.type = 'triangle';
+      bubbleOsc.frequency.setValueAtTime(320, now);
+      bubbleOsc.frequency.exponentialRampToValueAtTime(1450, now + 0.32);
+
+      bubbleGain.gain.setValueAtTime(0.01, now);
+      bubbleGain.gain.linearRampToValueAtTime(0.25, now + 0.15);
+      bubbleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      bubbleOsc.connect(bubbleGain);
+      bubbleGain.connect(ctx.destination);
+      bubbleOsc.start(now);
+      bubbleOsc.stop(now + 0.4);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 2. CARTOON 1 (Мульт 1): Theatrical superhero power-up brass blast + comic forcefield hum ("ТА-ДАААМ!")
+  playCartoonShield() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Comic raygun power surge
+      const rayOsc = ctx.createOscillator();
+      const rayGain = ctx.createGain();
+      rayOsc.type = 'sawtooth';
+      rayOsc.frequency.setValueAtTime(220, now);
+      rayOsc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(600, now);
+      filter.frequency.exponentialRampToValueAtTime(2400, now + 0.25);
+      filter.Q.setValueAtTime(5, now);
+
+      rayGain.gain.setValueAtTime(0.22, now);
+      rayGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      rayOsc.connect(filter);
+      filter.connect(rayGain);
+      rayGain.connect(ctx.destination);
+      rayOsc.start(now);
+      rayOsc.stop(now + 0.35);
+
+      // Heroic brass triad chord
+      [440, 554.37, 659.25].forEach((freq) => {
+        const brassOsc = ctx.createOscillator();
+        const brassGain = ctx.createGain();
+        brassOsc.type = 'triangle';
+        brassOsc.frequency.setValueAtTime(freq, now + 0.15);
+        brassGain.gain.setValueAtTime(0.18, now + 0.15);
+        brassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+        brassOsc.connect(brassGain);
+        brassGain.connect(ctx.destination);
+        brassOsc.start(now + 0.15);
+        brassOsc.stop(now + 0.55);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 3. NOTEBOOK (Тетрадь): Rapid compass draft rotation + crisp pencil hatching friction glide
+  playNotebookShield() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const duration = 0.35;
+
+      // Drafting friction noise
+      const bufferLength = Math.max(1, Math.floor(ctx.sampleRate * duration));
+      const noiseBuffer = ctx.createBuffer(1, bufferLength, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferLength; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.sin((i / bufferLength) * Math.PI);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(3200, now);
+      filter.frequency.exponentialRampToValueAtTime(1400, now + duration);
+      filter.Q.setValueAtTime(4.0, now);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + duration);
+
+      // Steel compass pivot ping
+      const ping = ctx.createOscillator();
+      const pingGain = ctx.createGain();
+      ping.type = 'sine';
+      ping.frequency.setValueAtTime(1760, now + 0.05);
+      ping.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+      pingGain.gain.setValueAtTime(0.18, now + 0.05);
+      pingGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+      ping.connect(pingGain);
+      pingGain.connect(ctx.destination);
+      ping.start(now + 0.05);
+      ping.stop(now + 0.3);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 4. BLUEPRINT (Чертеж): High-tech CAD grid resonance, vector pulse & ultrasonic sonar chirp
+  playBlueprintShield() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Dual digital calibration sine beeps
+      [880, 1320, 1760, 2640].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+        gain.gain.setValueAtTime(0.12, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.18);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + idx * 0.04 + 0.18);
+      });
+
+      // CAD vector grid laser sweep
+      const laser = ctx.createOscillator();
+      const laserGain = ctx.createGain();
+      laser.type = 'sawtooth';
+      laser.frequency.setValueAtTime(440, now);
+      laser.frequency.exponentialRampToValueAtTime(3200, now + 0.28);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1200, now);
+      filter.frequency.exponentialRampToValueAtTime(3600, now + 0.28);
+
+      laserGain.gain.setValueAtTime(0.18, now);
+      laserGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+      laser.connect(filter);
+      filter.connect(laserGain);
+      laserGain.connect(ctx.destination);
+      laser.start(now);
+      laser.stop(now + 0.3);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 5. SCI-FI / CYBERPUNK (Игра 1 / Dark): Heavy plasma field charge-up + electric ion hum ("ВУУУМ-ТШШШ!")
+  playSciFiShield() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Heavy sub-bass charge swell
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(65, now);
+      subOsc.frequency.exponentialRampToValueAtTime(220, now + 0.3);
+
+      subGain.gain.setValueAtTime(0.05, now);
+      subGain.gain.linearRampToValueAtTime(0.38, now + 0.2);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + 0.45);
+
+      // Plasma ionization hiss
+      const duration = 0.35;
+      const bufferLength = Math.max(1, Math.floor(ctx.sampleRate * duration));
+      const noiseBuffer = ctx.createBuffer(1, bufferLength, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferLength; i++) {
+        data[i] = (Math.random() * 2 - 1);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(2800, now);
+      filter.frequency.exponentialRampToValueAtTime(900, now + duration);
+      filter.Q.setValueAtTime(6.0, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.24, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + duration);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 6. CLASSIC / PAPER (Игра 2 / Бумага): Prismatic glass harmonic chord + shimmering bells
+  playClassicShield() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const freqs = [659.25, 830.61, 987.77, 1318.5]; // E5, G#5, B5, E6
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.03);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.4);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.03);
+        osc.stop(now + idx * 0.03 + 0.4);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  // =========================================================================
+  // --- DEFLECT SOUND (Когда хищник пытается укусить чудика с щитом) ---
+  // =========================================================================
+  playShieldDeflect() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      if (this.isCartoon2Mode || this.isCartoonMode) {
+        // Comical rubber boing + metallic bounce ("БОИНГ-ДЗИНЬ!")
+        const boing = ctx.createOscillator();
+        const boingGain = ctx.createGain();
+        boing.type = 'sine';
+        boing.frequency.setValueAtTime(260, now);
+        boing.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+        boing.frequency.exponentialRampToValueAtTime(320, now + 0.2);
+
+        boingGain.gain.setValueAtTime(0.3, now);
+        boingGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+        boing.connect(boingGain);
+        boingGain.connect(ctx.destination);
+        boing.start(now);
+        boing.stop(now + 0.22);
+      } else {
+        // Metallic ricochet + plasma deflection spark
+        const snap = ctx.createOscillator();
+        const snapGain = ctx.createGain();
+        snap.type = 'sawtooth';
+        snap.frequency.setValueAtTime(1600, now);
+        snap.frequency.exponentialRampToValueAtTime(340, now + 0.12);
+
+        snapGain.gain.setValueAtTime(0.28, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+        snap.connect(snapGain);
+        snapGain.connect(ctx.destination);
+        snap.start(now);
+        snap.stop(now + 0.14);
+      }
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const soundFx = new SoundEngine();

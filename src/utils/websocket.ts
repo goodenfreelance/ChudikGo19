@@ -211,6 +211,21 @@ export class GameWebSocket {
     });
   }
 
+  public sendActivateShield() {
+    this.send({
+      type: 'input',
+      activateShield: true,
+    });
+  }
+
+  public sendAdminActivateShield(targetCreatureId: string) {
+    this.send({
+      type: 'admin_control_input',
+      targetCreatureId,
+      activateShield: true,
+    });
+  }
+
   public sendChatMessage(name: string, color: string, chatMessage: string) {
     this.send({
       type: 'chat',

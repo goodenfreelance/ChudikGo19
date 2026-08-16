@@ -421,6 +421,27 @@ func (r *Room) HandleInput(playerID string, msg WSInputMessage) {
 		c.IsBraking = !c.IsBraking
 	}
 
+	if msg.ActivateShield || msg.Shield {
+		cfg := GetGlobalConfig()
+		cost := cfg.Physics.ShieldFoodCost
+		if cost < 0 {
+			cost = 50
+		}
+		durationSec := cfg.Physics.ShieldDurationSeconds
+		if durationSec <= 0 {
+			durationSec = 10.0
+		}
+		nowMs := time.Now().UnixMilli()
+		if c.FoodEaten >= cost && c.ShieldUntil <= nowMs {
+			c.FoodEaten -= cost
+			c.BankFood = c.FoodEaten
+			if c.Score >= cost {
+				c.Score -= cost
+			}
+			c.ShieldUntil = time.Now().Add(time.Duration(durationSec * float64(time.Second))).UnixMilli()
+		}
+	}
+
 	c.IsDashing = msg.Dash && c.FoodEaten > 0 && !c.IsBraking
 	if !c.IsDashing && c.State == "dashing" {
 		c.State = "moving"
@@ -456,6 +477,27 @@ func (r *Room) HandleAdminControlInput(targetCreatureID string, msg WSInputMessa
 		c.IsBraking = *msg.Brake
 	} else if msg.ToggleBrake {
 		c.IsBraking = !c.IsBraking
+	}
+
+	if msg.ActivateShield || msg.Shield {
+		cfg := GetGlobalConfig()
+		cost := cfg.Physics.ShieldFoodCost
+		if cost < 0 {
+			cost = 50
+		}
+		durationSec := cfg.Physics.ShieldDurationSeconds
+		if durationSec <= 0 {
+			durationSec = 10.0
+		}
+		nowMs := time.Now().UnixMilli()
+		if c.FoodEaten >= cost && c.ShieldUntil <= nowMs {
+			c.FoodEaten -= cost
+			c.BankFood = c.FoodEaten
+			if c.Score >= cost {
+				c.Score -= cost
+			}
+			c.ShieldUntil = time.Now().Add(time.Duration(durationSec * float64(time.Second))).UnixMilli()
+		}
 	}
 
 	c.IsDashing = msg.Dash && c.FoodEaten > 0 && !c.IsBraking

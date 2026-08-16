@@ -40,6 +40,10 @@ interface ControlsProps {
   bankFood?: number;
   isBraking?: boolean;
   onToggleBrake?: () => void;
+  isShieldActive?: boolean;
+  shieldRemainingSec?: number;
+  shieldCost?: number;
+  onActivateShield?: () => void;
   onOpenAuth?: () => void;
   onOpenUserCreatures?: () => void;
   onLogout?: () => void;
@@ -73,6 +77,10 @@ export const Controls: React.FC<ControlsProps> = ({
   bankFood = 0,
   isBraking = false,
   onToggleBrake,
+  isShieldActive = false,
+  shieldRemainingSec = 0,
+  shieldCost = 50,
+  onActivateShield,
   onOpenAuth,
   onOpenUserCreatures,
   onLogout,
@@ -196,6 +204,32 @@ export const Controls: React.FC<ControlsProps> = ({
         <span className="text-sm leading-none">🍎</span>
         <span>Еда: <strong className="text-emerald-200 font-mono text-sm">{food ?? bankFood}</strong></span>
       </div>
+
+      {/* Defense / Invulnerability Button (Z key) */}
+      {onActivateShield && (
+        <button
+          onClick={onActivateShield}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer select-none ${
+            isShieldActive
+              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-300 shadow-lg shadow-amber-500/40 ring-2 ring-amber-300 animate-pulse'
+              : (food ?? bankFood) >= shieldCost
+              ? 'bg-indigo-600/90 hover:bg-indigo-500 text-white border-indigo-400/80 shadow-md shadow-indigo-900/30'
+              : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-400 border-slate-700/60'
+          }`}
+          title={
+            isShieldActive
+              ? `🛡️ Неуязвимость активна! Осталось: ${shieldRemainingSec.toFixed(1)} сек`
+              : `🛡️ Активировать неуязвимость к канибализму на клавишу [Z] (Стоимость: ${shieldCost} еды)`
+          }
+        >
+          <ShieldCheck className={`w-4 h-4 ${isShieldActive ? 'text-slate-950 animate-spin' : 'text-amber-400'}`} />
+          <span>
+            {isShieldActive
+              ? `Щит: ${shieldRemainingSec.toFixed(0)}с`
+              : `Защита [Z] (${shieldCost}🍎)`}
+          </span>
+        </button>
+      )}
 
       {/* Brake / Neutral Button (N key) */}
       {onToggleBrake && (

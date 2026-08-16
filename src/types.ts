@@ -30,6 +30,8 @@ export interface PhysicsRules {
   restitutionCoefficient: number;
   dashMultiplier: number;
   dashFoodCostPerSecond: number;
+  shieldDurationSeconds?: number;
+  shieldFoodCost?: number;
   maxSpeed?: number;
   dragLinear: number;
   dragAngular: number;
@@ -128,6 +130,8 @@ export interface Creature {
   angularVel?: number;
   isSleeping?: boolean;
   isBraking?: boolean;
+  shieldUntil?: number;
+  isShielded?: boolean;
 }
 
 export interface Food {

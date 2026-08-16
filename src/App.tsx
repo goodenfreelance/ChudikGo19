@@ -69,6 +69,7 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isUserCreaturesOpen, setIsUserCreaturesOpen] = useState<boolean>(false);
   const [controlledCreatureId, setControlledCreatureId] = useState<string | null>(null);
+  const [worldRulesConfig, setWorldRulesConfig] = useState<WorldConfig | null>(null);
 
   // Economy Unified Food State (for sprint & base upgrades)
   const [localFood, setLocalFood] = useState<number>(() => {
@@ -223,6 +224,7 @@ export default function App() {
       .then((res) => res.json())
       .then((cfg) => {
         if (cfg) {
+          setWorldRulesConfig(cfg);
           updateElementPrices(cfg.economy?.elementPrices, cfg.world?.unlimitedElements);
         }
       })
@@ -541,6 +543,69 @@ export default function App() {
     });
   }, [isConnected, controlledCreatureId, yourCreatureId, creatures]);
 
+  // Invulnerability / Shield activation (Z key or button)
+  const handleActivateShield = useCallback(() => {
+    const targetId = controlledCreatureId || yourCreatureId || selectedCreatureId || creatures[0]?.id;
+    if (!targetId) return;
+
+    const cr = creatures.find((c) => c.id === targetId);
+    if (!cr) return;
+
+    const durationSec = worldRulesConfig?.physics?.shieldDurationSeconds ?? 10.0;
+    const cost = worldRulesConfig?.physics?.shieldFoodCost ?? 50;
+    const currentFood = cr.foodEaten ?? 0;
+    const now = Date.now();
+
+    // If already shielded, show remaining duration
+    if (cr.shieldUntil && cr.shieldUntil > now) {
+      const rem = ((cr.shieldUntil - now) / 1000).toFixed(1);
+      setToastMessage(`🛡️ Защита уже активна! Осталось: ${rem} сек.`);
+      setTimeout(() => setToastMessage(null), 2500);
+      return;
+    }
+
+    // Check food cost
+    if (currentFood < cost) {
+      soundFx.playBrake();
+      setToastMessage(`⚠️ Недостаточно еды для защиты [Z]! Нужно ${cost} 🍎, а у вас ${currentFood} 🍎.`);
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    // Play theme-specific shield audio
+    soundFx.playShield();
+    setToastMessage(`🛡️ ЗАЩИТА АКТИВИРОВАНА на ${durationSec} сек! (Иммунитет к канибализму)`);
+    setTimeout(() => setToastMessage(null), 3500);
+
+    const shieldUntil = now + durationSec * 1000;
+
+    // Send to server
+    if (isConnected) {
+      if (controlledCreatureId) {
+        gameWs.sendAdminActivateShield(controlledCreatureId);
+      } else {
+        gameWs.sendActivateShield();
+      }
+    }
+
+    // Optimistic local update
+    setCreatures((prev) =>
+      prev.map((c) => {
+        if (c.id === targetId) {
+          const nextFood = Math.max(0, (c.foodEaten ?? 0) - cost);
+          return {
+            ...c,
+            foodEaten: nextFood,
+            bankFood: nextFood,
+            shieldUntil,
+            isShielded: true,
+          };
+        }
+        return c;
+      })
+    );
+  }, [controlledCreatureId, yourCreatureId, selectedCreatureId, creatures, isConnected, worldRulesConfig]);
+
   // Base Exit Check: If creature leaves the base while editor is open, close editor immediately without saving
   useEffect(() => {
     if (!isEditorOpen || !editingCreatureId) return;
@@ -745,6 +810,15 @@ export default function App() {
         return;
       }
 
+      // Invulnerability / Shield key (Z)
+      if (e.code === 'KeyZ' || e.key === 'z' || e.key === 'Z' || e.key === 'я' || e.key === 'Я') {
+        e.preventDefault();
+        if (!e.repeat) {
+          handleActivateShield();
+        }
+        return;
+      }
+
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
         if (!e.repeat) {
@@ -799,7 +873,7 @@ export default function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [yourCreatureId, creatures, controlledCreatureId, isSpacePressed, isBraking, handleToggleBrake]);
+  }, [yourCreatureId, creatures, controlledCreatureId, isSpacePressed, isBraking, handleToggleBrake, handleActivateShield]);
 
   // Turn Player Creature
   const handleTurnPlayer = (dir: 'left' | 'right') => {
@@ -1194,6 +1268,22 @@ export default function App() {
                 bankFood={localFood}
                 isBraking={isBraking}
                 onToggleBrake={handleToggleBrake}
+                isShieldActive={Boolean(
+                  (() => {
+                    const activeId = controlledCreatureId || yourCreatureId || selectedCreatureId || creatures[0]?.id;
+                    const cr = creatures.find((c) => c.id === activeId);
+                    return cr && cr.shieldUntil && cr.shieldUntil > Date.now();
+                  })()
+                )}
+                shieldRemainingSec={(() => {
+                  const activeId = controlledCreatureId || yourCreatureId || selectedCreatureId || creatures[0]?.id;
+                  const cr = creatures.find((c) => c.id === activeId);
+                  return cr && cr.shieldUntil && cr.shieldUntil > Date.now()
+                    ? Math.max(0, (cr.shieldUntil - Date.now()) / 1000)
+                    : 0;
+                })()}
+                shieldCost={worldRulesConfig?.physics?.shieldFoodCost ?? 50}
+                onActivateShield={handleActivateShield}
                 onOpenAuth={() => setIsAuthOpen(true)}
                 onOpenUserCreatures={() => setIsUserCreaturesOpen(true)}
                 onLogout={handleLogout}
