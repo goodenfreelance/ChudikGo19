@@ -9,6 +9,8 @@ interface GridCanvasProps {
   foods: Food[];
   selectedCreatureId: string | null;
   selectedCreatureName?: string | null;
+  yourCreatureId?: string | null;
+  controlledCreatureId?: string | null;
   focusTimestamp?: number;
   gridTheme: GridTheme;
   showNodes: boolean;
@@ -32,6 +34,8 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
   foods = [],
   selectedCreatureId,
   selectedCreatureName,
+  yourCreatureId,
+  controlledCreatureId,
   focusTimestamp,
   gridTheme,
   showNodes,
@@ -94,6 +98,8 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
   const prevDashingMapRef = useRef<Map<string, boolean>>(new Map());
   const prevBrakingMapRef = useRef<Map<string, boolean>>(new Map());
   const prevCollisionsMapRef = useRef<Map<string, number>>(new Map());
+  const prevElementsCountMapRef = useRef<Map<string, number>>(new Map());
+  const prevCreatureIdsRef = useRef<Set<string>>(new Set());
   const cartoonCloudsRef = useRef<Array<{ x: number; y: number; scale: number; speed: number; opacity: number }>>([]);
   const cartoon2DecorsRef = useRef<Array<{ x: number; y: number; scale: number; speedX: number; speedY: number; emoji: string; rot: number; vRot: number; opacity: number }>>([]);
   const cartoon2ShootingStarsRef = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; len: number }>>([]);
@@ -111,6 +117,8 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
   const gridThemeRef = useRef(gridTheme);
   const showNodesRef = useRef(showNodes);
   const selectedCreatureIdRef = useRef(selectedCreatureId);
+  const yourCreatureIdRef = useRef(yourCreatureId);
+  const controlledCreatureIdRef = useRef(controlledCreatureId);
   const pendingPlacementRef = useRef(pendingPlacement);
   const isCameraLockedRef = useRef(isCameraLocked);
   const worldRadiusRef = useRef(worldRadius);
@@ -123,6 +131,8 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
   gridThemeRef.current = gridTheme;
   showNodesRef.current = showNodes;
   selectedCreatureIdRef.current = selectedCreatureId;
+  yourCreatureIdRef.current = yourCreatureId;
+  controlledCreatureIdRef.current = controlledCreatureId;
   pendingPlacementRef.current = pendingPlacement;
   isCameraLockedRef.current = isCameraLocked;
   worldRadiusRef.current = worldRadius;
@@ -1565,6 +1575,7 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
 
       // --- TRAIL & BOOST PARTICLES SYSTEM (Phase: Wake Trail & Boost Acceleration) ---
       const currentSpace = isSpacePressedRef.current;
+      const playerCreatureId = controlledCreatureIdRef.current || yourCreatureIdRef.current || 'c-1';
 
       // 1. Update trail history points & spawn boost particles
       currentCreatures.forEach((creature) => {
@@ -1572,9 +1583,9 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
         const currentX = animState ? animState.displayX : creature.x;
         const currentY = animState ? animState.displayY : creature.y;
         const currentAngle = animState ? animState.displayAngle : creature.angleDeg;
-        const isSelected = creature.id === currentSelectedId;
+        const isPlayerCreature = creature.id === playerCreatureId;
         const canDash = (creature.foodEaten ?? 0) > 0;
-        const isDashing = (creature.state === 'dashing' || (creature as any).isDashing || (isSelected && currentSpace)) && canDash;
+        const isDashing = (creature.state === 'dashing' || (creature as any).isDashing || (isPlayerCreature && currentSpace)) && canDash;
 
         // Food eaten event detection & comic popups
         const prevFood = prevFoodEatenMapRef.current.get(creature.id);
@@ -1652,6 +1663,66 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
         }
         prevFoodEatenMapRef.current.set(creature.id, currentFoodCount);
 
+        // Cannibalism event detection (segment bitten off)
+        const prevElemCount = prevElementsCountMapRef.current.get(creature.id);
+        const curElemCount = creature.elements.length;
+        if (prevElemCount !== undefined && curElemCount < prevElemCount) {
+          // Play beautiful cannibalism audio based on active theme
+          soundFx.playCannibalism(false);
+
+          let biteText = isCartoon2
+            ? ['ХРУМ! 🍖', 'ОЙ-ЁЙ! 🩸', 'КУСЬ! 😋', 'НЁМ-НЁМ! 💥'][Math.floor(Math.random() * 4)]
+            : isCartoon1
+            ? ['КУСЬ! 🥩', 'ХРУСЬ! 💥', 'АМ! 🍽️', 'ОЙ! 🩸'][Math.floor(Math.random() * 4)]
+            : 'УКУС! 💥';
+
+          boostParticlesRef.current.push({
+            x: currentX,
+            y: currentY - 0.7,
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: -1.8,
+            life: isCartoon2 ? 800 : 700,
+            maxLife: 800,
+            size: isCartoon2 ? 21 : 18,
+            color: '#ef4444',
+            type: 'comic_text',
+            text: biteText,
+          });
+
+          // In Cartoon 2: spawn blood/candy shockwave ripple
+          if (isCartoon2) {
+            cartoon2RipplesRef.current.push({
+              x: currentX,
+              y: currentY,
+              radius: 8 * currentZoom,
+              maxRadius: 34 * currentZoom,
+              color: '#ef4444',
+              alpha: 0.95,
+            });
+          }
+
+          // Spawn bite burst meat/spark fragments
+          const numBiteP = isCartoon2 ? 16 : isCartoon1 ? 12 : 7;
+          for (let bi = 0; bi < numBiteP; bi++) {
+            const bAngle = Math.random() * Math.PI * 2;
+            const bSpd = 1.3 + Math.random() * 3.2;
+            boostParticlesRef.current.push({
+              x: currentX,
+              y: currentY,
+              vx: Math.cos(bAngle) * bSpd,
+              vy: Math.sin(bAngle) * bSpd - 0.9,
+              life: 450 + Math.random() * 300,
+              maxLife: 600,
+              size: isCartoon2 ? 6 + Math.random() * 5 : 4 + Math.random() * 4,
+              color: Math.random() > 0.4 ? '#ef4444' : '#f97316',
+              type: isCartoon2 ? 'candy' : 'spark',
+              rot: Math.random() * Math.PI * 2,
+              vRot: (Math.random() - 0.5) * 14,
+            });
+          }
+        }
+        prevElementsCountMapRef.current.set(creature.id, curElemCount);
+
         // Dashing transition detection
         const wasDashing = prevDashingMapRef.current.get(creature.id) || false;
         if (isDashing && !wasDashing) {
@@ -1686,7 +1757,7 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
         prevDashingMapRef.current.set(creature.id, isDashing);
 
         // Braking transition detection
-        const isCreatureBraking = creature.isBraking || creature.state === 'braking' || (isSelected && isBrakingRef.current);
+        const isCreatureBraking = creature.isBraking || creature.state === 'braking' || (isPlayerCreature && isBrakingRef.current);
         const wasBraking = prevBrakingMapRef.current.get(creature.id) || false;
         if (isCreatureBraking && !wasBraking) {
           if (isCartoonTheme) {
@@ -2270,42 +2341,12 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                 ctx.fill();
 
-                // Cute Head Accessory (Crown, Party Hat, Antenna, Cat Ears)
-                const foodCount = creature.foodEaten ?? 0;
+                // Cute Head Accessory in Cartoon 2 (NO CROWNS - strictly non-confusing cute shapes: Party Hat, Star Antenna, Kitten Ears, Flower Daisy, Cute Ribbon Bow)
                 const idSeed = parseInt(creature.id.replace(/\D/g, '') || '1', 10);
-                const hasCrown = foodCount >= 3 || creature.inBase;
-                const accessoryType = hasCrown ? 'crown' : (idSeed % 3 === 0 ? 'party_hat' : idSeed % 3 === 1 ? 'cat_ears' : 'star_antenna');
+                const accessoryVariants = ['party_hat', 'star_antenna', 'cat_ears', 'flower', 'cute_bow'] as const;
+                const accessoryType = accessoryVariants[Math.abs(idSeed) % accessoryVariants.length];
 
-                if (accessoryType === 'crown') {
-                  // Royal Gold Gem Crown 👑
-                  ctx.save();
-                  ctx.translate(0, -headR - 4 * currentZoom);
-                  const cw = 14 * currentZoom;
-                  const ch = 10 * currentZoom;
-                  ctx.beginPath();
-                  ctx.moveTo(-cw / 2, 0);
-                  ctx.lineTo(-cw / 2, -ch);
-                  ctx.lineTo(-cw / 4, -ch * 0.5);
-                  ctx.lineTo(0, -ch * 1.15);
-                  ctx.lineTo(cw / 4, -ch * 0.5);
-                  ctx.lineTo(cw / 2, -ch);
-                  ctx.lineTo(cw / 2, 0);
-                  ctx.closePath();
-                  ctx.fillStyle = '#facc15';
-                  ctx.fill();
-                  ctx.strokeStyle = '#0f172a';
-                  ctx.lineWidth = 1.8 * currentZoom;
-                  ctx.stroke();
-
-                  // Ruby Gems on Crown peaks
-                  [-cw / 2, 0, cw / 2].forEach((gx) => {
-                    ctx.beginPath();
-                    ctx.arc(gx, gx === 0 ? -ch * 1.15 : -ch, 2 * currentZoom, 0, Math.PI * 2);
-                    ctx.fillStyle = '#ef4444';
-                    ctx.fill();
-                  });
-                  ctx.restore();
-                } else if (accessoryType === 'party_hat') {
+                if (accessoryType === 'party_hat') {
                   // Striped Party Cone Hat 🥳
                   ctx.save();
                   ctx.translate(0, -headR - 2 * currentZoom);
@@ -2367,6 +2408,59 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
                     ctx.fillStyle = '#fbcfe8';
                     ctx.fill();
                   });
+                } else if (accessoryType === 'flower') {
+                  // Cute Daisy Flower 🌸
+                  ctx.save();
+                  ctx.translate(0, -headR - 3 * currentZoom);
+                  // 5 rounded petals
+                  for (let pet = 0; pet < 5; pet++) {
+                    const pAngle = (pet * Math.PI * 2) / 5;
+                    ctx.beginPath();
+                    ctx.arc(Math.cos(pAngle) * 4.5 * currentZoom, Math.sin(pAngle) * 4.5 * currentZoom, 3 * currentZoom, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fbcfe8';
+                    ctx.fill();
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineWidth = 1.2 * currentZoom;
+                    ctx.stroke();
+                  }
+                  // Flower center
+                  ctx.beginPath();
+                  ctx.arc(0, 0, 3 * currentZoom, 0, Math.PI * 2);
+                  ctx.fillStyle = '#facc15';
+                  ctx.fill();
+                  ctx.stroke();
+                  ctx.restore();
+                } else if (accessoryType === 'cute_bow') {
+                  // Sweet Ribbon Bow 🎀
+                  ctx.save();
+                  ctx.translate(0, -headR - 2 * currentZoom);
+                  // Left bow wing
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.lineTo(-7 * currentZoom, -4 * currentZoom);
+                  ctx.lineTo(-7 * currentZoom, 4 * currentZoom);
+                  ctx.closePath();
+                  ctx.fillStyle = '#ec4899';
+                  ctx.fill();
+                  ctx.strokeStyle = '#0f172a';
+                  ctx.lineWidth = 1.5 * currentZoom;
+                  ctx.stroke();
+                  // Right bow wing
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.lineTo(7 * currentZoom, -4 * currentZoom);
+                  ctx.lineTo(7 * currentZoom, 4 * currentZoom);
+                  ctx.closePath();
+                  ctx.fillStyle = '#ec4899';
+                  ctx.fill();
+                  ctx.stroke();
+                  // Center knot
+                  ctx.beginPath();
+                  ctx.arc(0, 0, 2.5 * currentZoom, 0, Math.PI * 2);
+                  ctx.fillStyle = '#f43f5e';
+                  ctx.fill();
+                  ctx.stroke();
+                  ctx.restore();
                 }
 
                 // Predatory teeth & chomping animation for jaws

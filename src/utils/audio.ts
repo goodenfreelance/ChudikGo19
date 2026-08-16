@@ -19,6 +19,13 @@ class SoundEngine {
     return this.ctx;
   }
 
+  public currentTheme: string = 'notebook';
+
+  setTheme(theme: string) {
+    this.currentTheme = theme;
+    this.setCartoonMode(theme === 'cartoon' || theme === 'cartoon2', theme === 'cartoon2');
+  }
+
   setCartoonMode(isCartoon: boolean, isCartoon2: boolean = false) {
     this.isCartoonMode = isCartoon || isCartoon2;
     this.isCartoon2Mode = isCartoon2;
@@ -1002,6 +1009,281 @@ class SoundEngine {
       sparkleGain.connect(ctx.destination);
       sparkle.start(now + 0.04);
       sparkle.stop(now + 0.12);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // =========================================================================
+  // --- BEAUTIFUL CANNIBALISM AUDIO SYNTHESIS (Озвучка канибализма) ---
+  // =========================================================================
+  playCannibalism(isKill: boolean = false) {
+    if (this.isCartoon2Mode) {
+      this.playCartoon2Cannibalism(isKill);
+      return;
+    }
+    if (this.isCartoonMode) {
+      this.playCartoonCannibalism(isKill);
+      return;
+    }
+    if (this.currentTheme === 'notebook' || this.currentTheme === 'blueprint') {
+      this.playNotebookCannibalism(isKill);
+      return;
+    }
+    this.playVisceralCannibalism(isKill);
+  }
+
+  // 1. CARTOON 2 CANNIBALISM: Crunchy comical anime bite + funny juicy gulp ("ХРУМ-ХРУМ-БУЛЬК!")
+  playCartoon2Cannibalism(isKill: boolean = false) {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Part 1: Squeaky high predatory anime snap
+      const snapOsc = ctx.createOscillator();
+      const snapGain = ctx.createGain();
+      snapOsc.type = 'triangle';
+      snapOsc.frequency.setValueAtTime(1450, now);
+      snapOsc.frequency.exponentialRampToValueAtTime(320, now + 0.08);
+
+      snapGain.gain.setValueAtTime(0.22, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      snapOsc.connect(snapGain);
+      snapGain.connect(ctx.destination);
+      snapOsc.start(now);
+      snapOsc.stop(now + 0.09);
+
+      // Part 2: Juicy squishy jaw crunch (dual resonant sawtooth bursts)
+      [0, 0.06].forEach((delay, idx) => {
+        const crunchOsc = ctx.createOscillator();
+        const crunchGain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        crunchOsc.type = 'sawtooth';
+        crunchOsc.frequency.setValueAtTime(idx === 0 ? 380 : 540, now + delay);
+        crunchOsc.frequency.exponentialRampToValueAtTime(90, now + delay + 0.08);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(650, now + delay);
+        filter.Q.setValueAtTime(3.5, now + delay);
+
+        crunchGain.gain.setValueAtTime(0.25, now + delay);
+        crunchGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.09);
+
+        crunchOsc.connect(filter);
+        filter.connect(crunchGain);
+        crunchGain.connect(ctx.destination);
+
+        crunchOsc.start(now + delay);
+        crunchOsc.stop(now + delay + 0.09);
+      });
+
+      // Part 3: Comical cartoon GULP / bubble swallow ("БУЛЬК!")
+      const gulpOsc = ctx.createOscillator();
+      const gulpGain = ctx.createGain();
+      gulpOsc.type = 'sine';
+      gulpOsc.frequency.setValueAtTime(260, now + 0.14);
+      gulpOsc.frequency.exponentialRampToValueAtTime(740, now + 0.22);
+      gulpOsc.frequency.exponentialRampToValueAtTime(180, now + 0.32);
+
+      gulpGain.gain.setValueAtTime(0.01, now + 0.14);
+      gulpGain.gain.linearRampToValueAtTime(0.28, now + 0.2);
+      gulpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+
+      gulpOsc.connect(gulpGain);
+      gulpGain.connect(ctx.destination);
+      gulpOsc.start(now + 0.14);
+      gulpOsc.stop(now + 0.34);
+
+      // If kill: Add funny victory chime
+      if (isKill) {
+        setTimeout(() => {
+          this.playCartoon2Fanfare();
+        }, 180);
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 2. CARTOON 1 CANNIBALISM: Classic theatrical cartoon triple-chomp & jaw snap ("КУСЬ-ХРУСЬ!")
+  playCartoonCannibalism(isKill: boolean = false) {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+
+      // Two fast wooden teeth clicks
+      [0, 0.07].forEach((delay, idx) => {
+        const clickOsc = ctx.createOscillator();
+        const clickGain = ctx.createGain();
+        clickOsc.type = 'square';
+        clickOsc.frequency.setValueAtTime(idx === 0 ? 820 : 960, now + delay);
+        clickOsc.frequency.exponentialRampToValueAtTime(180, now + delay + 0.045);
+
+        clickGain.gain.setValueAtTime(0.2, now + delay);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.05);
+
+        clickOsc.connect(clickGain);
+        clickGain.connect(ctx.destination);
+        clickOsc.start(now + delay);
+        clickOsc.stop(now + delay + 0.05);
+      });
+
+      // Big resonant cartoon jaw clamp
+      const mainOsc = ctx.createOscillator();
+      const mainGain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      mainOsc.type = 'sawtooth';
+      mainOsc.frequency.setValueAtTime(480, now + 0.12);
+      mainOsc.frequency.exponentialRampToValueAtTime(110, now + 0.28);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, now + 0.12);
+      filter.frequency.exponentialRampToValueAtTime(300, now + 0.28);
+      filter.Q.setValueAtTime(4.0, now + 0.12);
+
+      mainGain.gain.setValueAtTime(0.26, now + 0.12);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+      mainOsc.connect(filter);
+      filter.connect(mainGain);
+      mainGain.connect(ctx.destination);
+
+      mainOsc.start(now + 0.12);
+      mainOsc.stop(now + 0.3);
+
+      if (isKill) {
+        setTimeout(() => {
+          this.playCartoonFanfare();
+        }, 160);
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 3. NOTEBOOK & BLUEPRINT CANNIBALISM: Tactile crisp paper tear & mechanical graphite snap
+  playNotebookCannibalism(isKill: boolean = false) {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const duration = 0.24;
+
+      // Paper tear texture noise
+      const bufferLength = Math.max(1, Math.floor(ctx.sampleRate * duration));
+      const noiseBuffer = ctx.createBuffer(1, bufferLength, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferLength; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferLength);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(2400, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(800, now + duration);
+      noiseFilter.Q.setValueAtTime(3.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.25, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      noise.start(now);
+      noise.stop(now + duration);
+
+      // Sharp mechanical pencil / bone snap
+      const snapOsc = ctx.createOscillator();
+      const snapGain = ctx.createGain();
+      snapOsc.type = 'triangle';
+      snapOsc.frequency.setValueAtTime(1100, now);
+      snapOsc.frequency.exponentialRampToValueAtTime(140, now + 0.08);
+
+      snapGain.gain.setValueAtTime(0.22, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      snapOsc.connect(snapGain);
+      snapGain.connect(ctx.destination);
+      snapOsc.start(now);
+      snapOsc.stop(now + 0.09);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 4. VISCERAL / MODERN CANNIBALISM: Heavy predatory crunch with sub-thud & flesh rip sweep
+  playVisceralCannibalism(isKill: boolean = false) {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const duration = 0.28;
+
+      // Heavy sub-bass bite impact
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = 'triangle';
+      subOsc.frequency.setValueAtTime(110, now);
+      subOsc.frequency.exponentialRampToValueAtTime(32, now + duration);
+
+      subGain.gain.setValueAtTime(0.35, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + duration);
+
+      // Flesh & armor crunch noise sweep
+      const bufferLength = Math.max(1, Math.floor(ctx.sampleRate * duration));
+      const noiseBuffer = ctx.createBuffer(1, bufferLength, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferLength; i++) {
+        data[i] = (Math.random() * 2 - 1);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(1600, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(380, now + duration);
+      noiseFilter.Q.setValueAtTime(4.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.3, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      noise.start(now);
+      noise.stop(now + duration);
+
+      // Sharp predatory tooth puncture
+      const toothOsc = ctx.createOscillator();
+      const toothGain = ctx.createGain();
+      toothOsc.type = 'sawtooth';
+      toothOsc.frequency.setValueAtTime(680, now);
+      toothOsc.frequency.exponentialRampToValueAtTime(140, now + 0.14);
+
+      toothGain.gain.setValueAtTime(0.2, now);
+      toothGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+      toothOsc.connect(toothGain);
+      toothGain.connect(ctx.destination);
+      toothOsc.start(now);
+      toothOsc.stop(now + 0.15);
     } catch {
       // Ignore
     }

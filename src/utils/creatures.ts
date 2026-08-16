@@ -1,4 +1,5 @@
 import { Creature, CreatureElement, Food, PhysicsForces, JointPhysics, Point, ElementType } from '../types';
+import { soundFx } from './audio';
 
 export const STARTER_PRESET: { name: string; description: string; elements: CreatureElement[] } = {
   name: 'Стартовый Чудик (Бесплатный)',
@@ -1545,9 +1546,11 @@ export function resolveCreatureBites(creatures: Creature[]): { creatures: Creatu
       if (cB.elements.length === 0) {
         creatureMap.delete(cB.id);
         cA.foodEaten = (cA.foodEaten || 0) + 5;
+        soundFx.playCannibalism(true);
       } else {
         cB.forces = calculatePhysicsForces(cB.elements, cB.muscleStep || 0);
         cA.foodEaten = (cA.foodEaten || 0) + 1;
+        soundFx.playCannibalism(false);
       }
     }
   }

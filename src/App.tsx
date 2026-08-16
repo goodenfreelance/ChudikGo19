@@ -30,7 +30,7 @@ export default function App() {
   }, [soundEnabled]);
 
   useEffect(() => {
-    soundFx.setCartoonMode(gridTheme === 'cartoon' || gridTheme === 'cartoon2', gridTheme === 'cartoon2');
+    soundFx.setTheme(gridTheme);
   }, [gridTheme]);
   const [showNodes, setShowNodes] = useState<boolean>(true);
   const [selectedCreatureId, setSelectedCreatureId] = useState<string | null>('c-1');
@@ -510,7 +510,7 @@ export default function App() {
       setTimeout(() => setToastMessage(null), 2500);
 
       if (isConnected) {
-        const targetId = controlledCreatureId || yourCreatureId || selectedCreatureId || creatures[0]?.id;
+        const targetId = controlledCreatureId || yourCreatureId || 'c-1' || creatures[0]?.id;
         if (targetId) {
           const cr = creatures.find((cur) => cur.id === targetId);
           if (cr) {
@@ -539,7 +539,7 @@ export default function App() {
       }
       return next;
     });
-  }, [isConnected, controlledCreatureId, yourCreatureId, selectedCreatureId, creatures]);
+  }, [isConnected, controlledCreatureId, yourCreatureId, creatures]);
 
   // Base Exit Check: If creature leaves the base while editor is open, close editor immediately without saving
   useEffect(() => {
@@ -567,7 +567,7 @@ export default function App() {
   // Synchronize Dash input with Go Server whenever Space is held/released
   useEffect(() => {
     if (!isConnected) return;
-    const targetId = controlledCreatureId || yourCreatureId || selectedCreatureId || creatures[0]?.id;
+    const targetId = controlledCreatureId || yourCreatureId || 'c-1' || creatures[0]?.id;
     if (!targetId) return;
 
     const c = creatures.find((cr) => cr.id === targetId);
@@ -608,7 +608,7 @@ export default function App() {
         clearInterval(soundTimer);
       };
     }
-  }, [isSpacePressed, isConnected, yourCreatureId, controlledCreatureId, selectedCreatureId, creatures]);
+  }, [isSpacePressed, isConnected, yourCreatureId, controlledCreatureId, creatures]);
 
   // Local physics simulation fallback when disconnected from server
   useEffect(() => {
@@ -621,7 +621,7 @@ export default function App() {
 
     const timer = setInterval(() => {
       setCreatures((prevCreatures) => {
-        const activeId = controlledCreatureId || yourCreatureId || selectedCreatureId || prevCreatures[0]?.id;
+        const activeId = controlledCreatureId || yourCreatureId || 'c-1' || prevCreatures[0]?.id;
         return prevCreatures.map((c) => {
           const isThisBraking = ((c.id === activeId && isBraking) || Boolean((c as any).isBraking));
           if (isThisBraking) {
@@ -825,7 +825,7 @@ export default function App() {
       return;
     }
 
-    const targetId = yourCreatureId || selectedCreatureId || creatures[0]?.id;
+    const targetId = controlledCreatureId || yourCreatureId || 'c-1' || creatures[0]?.id;
     if (!targetId) return;
 
     soundFx.playTurn();
@@ -874,7 +874,7 @@ export default function App() {
       return;
     }
 
-    const targetId = yourCreatureId || selectedCreatureId || creatures[0]?.id;
+    const targetId = controlledCreatureId || yourCreatureId || 'c-1' || creatures[0]?.id;
     if (!targetId) return;
 
     soundFx.playFlex();
@@ -1139,6 +1139,8 @@ export default function App() {
           foods={foods}
           selectedCreatureId={selectedCreatureId}
           selectedCreatureName={selectedCreature?.name}
+          yourCreatureId={yourCreatureId}
+          controlledCreatureId={controlledCreatureId}
           focusTimestamp={focusTimestamp}
           gridTheme={gridTheme}
           showNodes={showNodes}
