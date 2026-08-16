@@ -1171,9 +1171,8 @@ func ResolveCreatureBites(creatures map[string]*Creature, spawnFoodCb func(x, y 
 			}
 			cB := list[j]
 
-			// Safe Zone check: Target is immune inside base or when invulnerability shield is active
-			nowMs := time.Now().UnixMilli()
-			if IsInsideBase(cB.X, cB.Y, worldRadius) || cB.ShieldUntil > nowMs {
+			// Safe Zone check: Target is immune inside base
+			if IsInsideBase(cB.X, cB.Y, worldRadius) {
 				continue
 			}
 

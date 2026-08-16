@@ -10,8 +10,6 @@
     "restitutionCoefficient": 0.45,
     "dashMultiplier": 1.6,
     "dashFoodCostPerSecond": 1.0,
-    "shieldDurationSeconds": 10.0,
-    "shieldFoodCost": 50,
     "maxSpeed": 1.2,
     "dragLinear": 3.0,
     "dragAngular": 4.5,

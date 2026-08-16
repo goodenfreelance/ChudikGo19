@@ -49,8 +49,6 @@ const DEFAULT_CONFIG: WorldConfig = {
     restitutionCoefficient: 0.5,
     dashMultiplier: 1.6,
     dashFoodCostPerSecond: 1.0,
-    shieldDurationSeconds: 10.0,
-    shieldFoodCost: 50,
     dragLinear: 0.01,
     dragAngular: 0.005,
     muscleStiffness: 50.0,
@@ -739,7 +737,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="text-slate-400">Расход еды рывка (ед./сек):</label>
+                      <label className="text-slate-400">Расход еды (ед./сек):</label>
                       <input
                         type="number"
                         step="0.5"
@@ -753,44 +751,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           })
                         }
                         className="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-200"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-emerald-400 font-semibold flex items-center gap-1">
-                        <span>🛡️ Время защиты [Z] (сек):</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="1"
-                        min="1"
-                        max="60"
-                        value={worldConfig.physics.shieldDurationSeconds ?? 10.0}
-                        onChange={(e) =>
-                          setWorldConfig({
-                            ...worldConfig,
-                            physics: { ...worldConfig.physics, shieldDurationSeconds: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full bg-slate-900 border border-emerald-500/50 rounded p-1 text-emerald-300 font-bold focus:ring-1 focus:ring-emerald-400 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-emerald-400 font-semibold flex items-center gap-1">
-                        <span>🛡️ Стоимость защиты [Z] (еда):</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="5"
-                        min="0"
-                        max="500"
-                        value={worldConfig.physics.shieldFoodCost ?? 50}
-                        onChange={(e) =>
-                          setWorldConfig({
-                            ...worldConfig,
-                            physics: { ...worldConfig.physics, shieldFoodCost: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full bg-slate-900 border border-emerald-500/50 rounded p-1 text-emerald-300 font-bold focus:ring-1 focus:ring-emerald-400 focus:outline-none"
                       />
                     </div>
                     <div>

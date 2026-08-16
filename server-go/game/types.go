@@ -86,7 +86,6 @@ type Creature struct {
 	State                string            `json:"state"` // "idle", "hunting", "eating", "moving", "dashing", "braking"
 	IsDashing            bool              `json:"isDashing"`
 	IsBraking            bool              `json:"isBraking"`
-	ShieldUntil          int64             `json:"shieldUntil"`
 	DashFractionAccum    float64           `json:"-"`
 	Elements             []CreatureElement `json:"elements"`
 	Forces               PhysicsForces     `json:"forces"`
@@ -150,8 +149,6 @@ type WSInputMessage struct {
 	Dash             bool              `json:"dash,omitempty"`
 	Brake            *bool             `json:"brake,omitempty"`
 	ToggleBrake      bool              `json:"toggleBrake,omitempty"`
-	ActivateShield   bool              `json:"activateShield,omitempty"`
-	Shield           bool              `json:"shield,omitempty"`
 	FoodX            *float64          `json:"foodX,omitempty"`
 	FoodY            *float64          `json:"foodY,omitempty"`
 	FoodType         FoodType          `json:"foodType,omitempty"`
@@ -233,8 +230,6 @@ type CreatureNet struct {
 	State      string            `json:"state"`
 	IsDashing  bool              `json:"isDashing"`
 	IsBraking  bool              `json:"isBraking"`
-	ShieldUntil int64            `json:"shieldUntil,omitempty"`
-	IsShielded bool              `json:"isShielded"`
 	Kills      int               `json:"kills"`
 	Elements   []CreatureElement `json:"elements"`
 	Forces     PhysicsForcesNet  `json:"forces"`
@@ -274,8 +269,6 @@ func ToCreatureNet(c Creature) CreatureNet {
 		State:      c.State,
 		IsDashing:  (c.IsDashing || c.State == "dashing") && c.FoodEaten > 0,
 		IsBraking:  c.IsBraking,
-		ShieldUntil: c.ShieldUntil,
-		IsShielded: c.ShieldUntil > time.Now().UnixMilli(),
 		Kills:      c.Kills,
 		Elements:   c.Elements,
 		Forces: PhysicsForcesNet{

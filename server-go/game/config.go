@@ -22,8 +22,6 @@ type PhysicsRules struct {
 	RestitutionCoefficient float64 `json:"restitutionCoefficient"`
 	DashMultiplier         float64 `json:"dashMultiplier"`
 	DashFoodCostPerSecond  float64 `json:"dashFoodCostPerSecond"`
-	ShieldDurationSeconds  float64 `json:"shieldDurationSeconds"`
-	ShieldFoodCost         int     `json:"shieldFoodCost"`
 	MaxSpeed               float64 `json:"maxSpeed"`
 	DragLinear             float64 `json:"dragLinear"`
 	DragAngular            float64 `json:"dragAngular"`
@@ -81,8 +79,6 @@ func DefaultWorldConfig() WorldConfig {
 			RestitutionCoefficient: 0.45,
 			DashMultiplier:         1.6,
 			DashFoodCostPerSecond:  1.0,
-			ShieldDurationSeconds:  10.0,
-			ShieldFoodCost:         50,
 			MaxSpeed:               1.2,
 			DragLinear:             3.0,
 			DragAngular:            4.5,

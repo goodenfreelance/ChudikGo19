@@ -1461,11 +1461,6 @@ export function resolveCreatureBites(creatures: Creature[]): { creatures: Creatu
       if (i === j) continue;
       const cB = creatures[j];
 
-      // Safe Zone check & Invulnerability Shield check
-      if (isInsideBase(cB.x, cB.y) || (cB.shieldUntil && cB.shieldUntil > Date.now())) {
-        continue;
-      }
-
       const rA = calculateCreatureRadius(cA.elements);
       const rB = calculateCreatureRadius(cB.elements);
       const centerDist = Math.hypot(cB.x - cA.x, cB.y - cA.y);
