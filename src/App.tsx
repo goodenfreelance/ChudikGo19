@@ -497,7 +497,11 @@ export default function App() {
   const handleToggleBrake = useCallback(() => {
     setIsBraking((prev) => {
       const next = !prev;
-      soundFx.playFlex();
+      if (next) {
+        soundFx.playBrake();
+      } else {
+        soundFx.playFlex();
+      }
       setToastMessage(
         next
           ? '🛑 Тормоз (Нейтраль) включен [N] — чудик замер'
@@ -592,10 +596,17 @@ export default function App() {
     sendDashState(effectiveDashing);
 
     if (effectiveDashing) {
+      soundFx.playDash();
+      const soundTimer = setInterval(() => {
+        soundFx.playDash();
+      }, 340);
       const timer = setInterval(() => {
         sendDashState(true);
       }, 50);
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+        clearInterval(soundTimer);
+      };
     }
   }, [isSpacePressed, isConnected, yourCreatureId, controlledCreatureId, selectedCreatureId, creatures]);
 

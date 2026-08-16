@@ -1654,58 +1654,57 @@ const GridCanvasComponent: React.FC<GridCanvasProps> = ({
 
         // Dashing transition detection
         const wasDashing = prevDashingMapRef.current.get(creature.id) || false;
-        if (isDashing && !wasDashing && isCartoonTheme) {
-          boostParticlesRef.current.push({
-            x: currentX,
-            y: currentY - 0.5,
-            vx: 0,
-            vy: -1.6,
-            life: 600,
-            maxLife: 600,
-            size: isCartoon2 ? 19 : 17,
-            color: isCartoon2 ? '#fb923c' : '#f97316',
-            type: 'comic_text',
-            text: isCartoon2 ? 'TURBO VROOM! 🚀' : 'ZOOM! 💨',
-          });
-
-          if (isCartoon2) {
-            cartoon2RipplesRef.current.push({
+        if (isDashing && !wasDashing) {
+          if (isCartoonTheme) {
+            boostParticlesRef.current.push({
               x: currentX,
-              y: currentY,
-              radius: 8 * currentZoom,
-              maxRadius: 36 * currentZoom,
-              color: '#38bdf8',
-              alpha: 1.0,
+              y: currentY - 0.5,
+              vx: 0,
+              vy: -1.6,
+              life: 600,
+              maxLife: 600,
+              size: isCartoon2 ? 19 : 17,
+              color: isCartoon2 ? '#fb923c' : '#f97316',
+              type: 'comic_text',
+              text: isCartoon2 ? '💨 ПУУК! 💨' : '🏎️ РЕВ МОТОРА! ⚡',
             });
-            soundFx.playCartoon2Turn();
-          } else {
-            soundFx.playSlideWhistle('up');
+
+            if (isCartoon2) {
+              cartoon2RipplesRef.current.push({
+                x: currentX,
+                y: currentY,
+                radius: 8 * currentZoom,
+                maxRadius: 36 * currentZoom,
+                color: '#38bdf8',
+                alpha: 1.0,
+              });
+            }
           }
+          // Trigger dash sound: fart in Cartoon 2, roaring engine in Cartoon 1
+          soundFx.playDash();
         }
         prevDashingMapRef.current.set(creature.id, isDashing);
 
         // Braking transition detection
         const isCreatureBraking = creature.isBraking || creature.state === 'braking' || (isSelected && isBrakingRef.current);
         const wasBraking = prevBrakingMapRef.current.get(creature.id) || false;
-        if (isCreatureBraking && !wasBraking && isCartoonTheme) {
-          boostParticlesRef.current.push({
-            x: currentX,
-            y: currentY - 0.4,
-            vx: 0,
-            vy: -1.3,
-            life: 550,
-            maxLife: 550,
-            size: isCartoon2 ? 18 : 16,
-            color: '#f43f5e',
-            type: 'comic_text',
-            text: isCartoon2 ? 'SCREEECH! 🛑🛞' : 'SKID! 🛑',
-          });
-
-          if (isCartoon2) {
-            soundFx.playCartoon2Collide();
-          } else {
-            soundFx.playCartoonSkid();
+        if (isCreatureBraking && !wasBraking) {
+          if (isCartoonTheme) {
+            boostParticlesRef.current.push({
+              x: currentX,
+              y: currentY - 0.4,
+              vx: 0,
+              vy: -1.3,
+              life: 550,
+              maxLife: 550,
+              size: isCartoon2 ? 18 : 16,
+              color: '#f43f5e',
+              type: 'comic_text',
+              text: isCartoon2 ? 'ВИЗГ ШИН! 🛑🛞' : 'ВИЗГ ШИН! 🛑🛞',
+            });
           }
+          // Trigger tire screech sound in both modes
+          soundFx.playBrake();
         }
         prevBrakingMapRef.current.set(creature.id, isCreatureBraking);
 
